@@ -1,5 +1,5 @@
 <?php
-namespace mmoravac;
+namespace Mmoravac;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Subscriber\Oauth\Oauth1;

@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Vlucas\\": "src/mmoravac"
+            "Mmoravac\\": "src/mmoravac"
         }
     }
 }
