@@ -4,7 +4,7 @@
     "description": "Modern PHP client for working with the OpenX v4 oAuth API",
     "keywords": ["openx", "openx oauth", "openx api"],
     "homepage": "https://github.com/mmoravac/openx",
-    "license" : "BSD",
+    "license" : "proprietary",
     "authors": [
         {
             "name": "Milos Moravac",
