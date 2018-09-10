@@ -7,14 +7,14 @@ Uses [Guzzle v4.x](https://github.com/guzzle/guzzle/tree/4.2.3) and the
 ## Installation
 
 ```
-php composer.phar require vlucas/openx-oauth-client
+php composer.phar require mmoravac/openx
 ```
 
 ## Usage in your code:
 
 ```php
 // Setup client and login with user
-$client = new Vlucas\OpenX($consumerKey, $consumerSecret, $oauthRealm, 'http://ox-ui.example.com/ox/4.0/');
+$client = new mmoravac\OpenX($consumerKey, $consumerSecret, $oauthRealm, 'http://ox-ui.example.com/ox/4.0/');
 $client->login('user@example.com', 'souper-seekret-password');
 
 // GET /account - for list of accounts
