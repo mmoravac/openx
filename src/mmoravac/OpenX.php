@@ -2,6 +2,7 @@
 namespace Mmoravac;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Subscriber\Oauth\Oauth1;
 
 /**
@@ -77,22 +78,34 @@ class OpenX
         $this->realm = $realm;
         $this->baseUrl = $baseUrl;
 
+        $this->handler = HandlerStack::create();
+
+        $this->oauth = new Oauth1([
+            'consumer_key'    => $this->consumerKey,
+            'consumer_secret' => $this->consumerSecret,
+            'realm'           => $this->realm,
+            'token_secret' => false
+        ]);
+        $this->handler->push($this->oauth);
+
         $this->client = new Client([
             'base_url' => $this->baseUrl,
+            'handler' => $this->handler,
+            'auth' => 'oauth',
             'defaults' => [
-                'auth' => 'oauth',
+                
                 'headers' => [
                     'Content-Type' => 'application/json'
                 ]
             ]
         ]);
 
-        $this->oauth = new Oauth1([
-            'consumer_key'    => $this->consumerKey,
-            'consumer_secret' => $this->consumerSecret,
-            'realm'           => $this->realm
-        ]);
-        $this->client->getEmitter()->attach($this->oauth);
+        // $this->oauth = new Oauth1([
+        //     'consumer_key'    => $this->consumerKey,
+        //     'consumer_secret' => $this->consumerSecret,
+        //     'realm'           => $this->realm,
+        // ]);
+        // $this->client->getEmitter()->attach($this->oauth);
 
         $this->config = array_merge([
             'requestTokenUrl' => 'https://sso.openx.com/api/index/initiate',
@@ -125,9 +138,11 @@ class OpenX
         if (!empty($this->requestToken) && $refresh === false) {
             return $this->requestToken;
         }
-
-        $res = $this->client->post($this->config['requestTokenUrl'], ['body' => ['oauth_callback' => $this->config['callbackUrl']]]);
+        
+        $res = $this->client->post($this->config['requestTokenUrl'], ['form_params' => ['oauth_callback' => $this->config['callbackUrl']]]);
+       
         parse_str((string) $res->getBody(), $params);
+      
 
         $this->requestToken       = $params['oauth_token'];
         $this->requestTokenSecret = $params['oauth_token_secret'];
@@ -148,16 +163,19 @@ class OpenX
         if (empty($this->requestToken)) {
             $this->getRequestToken();
         }
-
+       
         $response = $this->client->post($this->config['loginUrl'], [
-            'body' => [
-                'email'       => $email,
+            'form_params' => [
                 'password'    => $password,
-                'oauth_token' => $this->requestToken
+                'oauth_token' => $this->requestToken,
+                'email'       => $email,
+                
+                
             ]
         ]);
+        
         parse_str(substr((string) $response->getBody(), 4), $loginParams);
-
+        
         $this->requestToken = $loginParams['oauth_token'];
         $this->verifier     = $loginParams['oauth_verifier'];
 
@@ -180,8 +198,8 @@ class OpenX
         if (empty($this->requestToken) || empty($this->verifier)) {
             throw new \BadMethodCallException("This method requires a valid requestToken and verifier. Please call \$client->login() first.");
         }
-
-        $this->client->getEmitter()->detach($this->oauth);
+        
+        //$this->client->getEmitter()->detach($this->oauth);
         $this->oauth = new Oauth1([
             'consumer_key'    => $this->consumerKey,
             'consumer_secret' => $this->consumerSecret,
@@ -189,16 +207,16 @@ class OpenX
             'token_secret'    => $this->requestTokenSecret,
             'verifier'        => $this->verifier
         ]);
-
+        $this->handler->push($this->oauth);
         // Set the "auth" request option to "oauth" to sign using oauth
-        $this->client->getEmitter()->attach($this->oauth);
+        //$this->client->getEmitter()->attach($this->oauth);
         $res = $this->client->post($this->config['accessTokenUrl']);
 
         $response = (string) $res->getBody();
         parse_str($response, $accessTokenParams);
 
         // We don't need the oauth plugin any more
-        $this->client->getEmitter()->detach($this->oauth);
+        //$this->client->getEmitter()->detach($this->oauth);
 
         // Save and return acccess token
         $this->accessToken = $accessTokenParams['oauth_token'];
@@ -244,6 +262,7 @@ class OpenX
         ], isset($options['headers']) ? $options['headers'] : []);
 
         // Make request
-        return $this->client->$method($url, $options);
+       
+        return $this->client->$method($this->baseUrl . $url, $options)->getBody()->getContents();
     }
 }
